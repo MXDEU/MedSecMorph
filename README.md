@@ -1,8 +1,4 @@
-_|      _|                  _|    _|_|_|                      
-_|_|  _|_|    _|_|      _|_|_|  _|          _|_|      _|_|_|  
-_|  _|  _|  _|_|_|_|  _|    _|    _|_|    _|_|_|_|  _|        
-_|      _|  _|        _|    _|        _|  _|        _|        
-_|      _|    _|_|_|    _|_|_|  _|_|_|      _|_|_|    _|_|_|  
+#MedSec 
 Anwendung von https://pypi.org/project/face-biometric-recognition/
 um in Python Gesichtserkennung umzusetzen. 
 
