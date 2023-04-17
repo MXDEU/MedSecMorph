@@ -1,4 +1,5 @@
 # MedSec
+coole morphs oderso
 ## Aktuelle Schritte 
 Anwendung von https://pypi.org/project/face-biometric-recognition/
 um in Python Gesichtserkennung umzusetzen. 
@@ -20,6 +21,3 @@ Input -> Vorverarbeitung -> Face Recognition -> Extraktion -> FE (Feature Extrak
 - Toleranzparameter
 - Passt das für eine oder beide Bilder?
 - eigene Morph Acceptance Rate -> wie hoch müssen die beiden Bilder zusammen sein
-
-
-coole morphs oderso
