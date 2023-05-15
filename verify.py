@@ -11,7 +11,7 @@ from os.path import isfile, join
 from random import randrange
 import random
 
-DRYRUN = True
+DRYRUN = False
 TYPE_MORPH = "morph"
 TYPE_ORIG = "orig"
 
@@ -56,7 +56,7 @@ def findFMR(results):
     for s in results:
         for i in s.matches:
             matches = matches + len(s.matches)
-            
+
             if i == True:
                 fm = fm + 1
 
