@@ -20,7 +20,7 @@ TYPE_MORPH = "morph"
 TYPE_ORIG = "orig"
 
 IMAGES = "images"
-DIR_FMT = re.compile("morphs-emil")
+DIR_FMT = re.compile("morphs-[a-z]+") # Run a single dir: morphs-name
 MORPH_FMT = re.compile("([a-z]+)-(\d+)_(\d+)\.[a-z]{3}")
 
 class Sample:
