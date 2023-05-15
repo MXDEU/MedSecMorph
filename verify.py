@@ -8,15 +8,66 @@ import re
 
 from os import listdir
 from os.path import isfile, join
+from random import randrange
+import random
 
-IMAGES = "./images"
+DRYRUN = True
+TYPE_MORPH = "morph"
+TYPE_ORIG = "orig"
+
+IMAGES = "images"
 DIR_FMT = re.compile("morphs-[a-z]+")
 MORPH_FMT = re.compile("([a-z]+)-(\d+)_(\d+)\.[a-z]{3}")
 
-REAL_DIR = "./morphs-noah/"
-MORPH_DIR = "./morphs-noah/"
+class Sample:
+    def __init__(self, img, imgs, matches, tolerance):
+        self.type = "unset"
+        self.program = "unset"
+        self.img = img
+        self.imgs = imgs
+        self.matches = matches
+        self.tolerance = tolerance
+
+    def __str__(self):
+        if self.type == TYPE_MORPH:
+            return f"[{self.type}, {self.program}, {self.img}, {self.imgs}, {self.matches}, {self.tolerance}]"
+        elif self.type == TYPE_ORIG:
+            return f"[{self.type}, {self.img}, {self.imgs}, {self.matches}, {self.tolerance}]"
+
+        return f"[{self.type}]"
+
+    def __repr__(self):
+        return str(self)
+
+images = []
+
+# Eval
+
+# Returns an array of all failed result tupels.
+# A tupel is failed if any of the matches returned true.
+def findErrors(results):
+    return
+
+# Returns FMR
+def findFMR(results):
+    fm = 0 # false matches
+    matches = 0
+
+    for s in results:
+        for i in s.matches:
+            matches = matches + len(s.matches)
+            
+            if i == True:
+                fm = fm + 1
+
+    return round(fm / matches, 3)
+
+# Execute
 
 def compare(morph_img, real_imgs, tolerance = 0.5):
+    if DRYRUN:
+        return [random.choice([True, False]), random.choice([True, False])]
+
     morph = lib.load_image_file(morph_img)
     morph_enc = lib.face_encodings(morph)[0]
     morph_landmarks = lib.face_landmarks(morph)
@@ -39,7 +90,34 @@ def compare(morph_img, real_imgs, tolerance = 0.5):
 
     return results
 
+def genSample(imgFile, imgs, tolerance = 0.6):
+    files = list(map(lambda i: IMAGES + "/" + i + "_03.jpg", imgs))
+    comp = compare(imgFile, files, tolerance)
+    sample = Sample(imgFile, imgs, comp, tolerance)
+
+    return sample
+
 # Filename format: {program}-{left}_{right}.jpg
+def genMorphSample(morphDir, morphFilename):
+    match = MORPH_FMT.search(morphFilename)
+
+    if match != None:
+        morphFile = morphDir + "/" + morphFilename
+        program = match.group(1)
+        left = match.group(2)
+        right = match.group(3)
+
+        images.append(left)
+        images.append(right)
+
+        sample = genSample(morphFile, [left, right])
+        sample.type = TYPE_MORPH
+        sample.program = program
+
+        return sample
+
+    return None
+
 def getImageTupel(morphDir, morphFilename):
     match = MORPH_FMT.search(morphFilename)
 
@@ -51,9 +129,13 @@ def getImageTupel(morphDir, morphFilename):
         # TODO: randomize
         tolerance = 0.6
 
+        morphFile = morphDir + "/" + morphFilename
         leftFile = IMAGES + "/" + left + "_03.jpg"
         rightFile = IMAGES + "/" + right + "_03.jpg"
-        comp = compare(morphDir + "/" + morphFilename, [leftFile, rightFile], tolerance)
+
+        comp = compare(morphFile, [leftFile, rightFile], tolerance)
+        images.append(left)
+        images.append(right)
 
         # program, original left, original right, tolerance used, match (left, right)
         return [program, left, right, tolerance, comp]
@@ -66,23 +148,62 @@ def readImages():
 
 def doMorphDir(dir):
     files = [f for f in listdir(dir) if isfile(join(dir, f))]
-    tupels = []
+    samples = []
 
     for f in files:
-        tupels.append(getImageTupel(dir, f))
+        samples.append(genMorphSample(dir, f))
 
-    return tupels
+    return samples
 
 def doMorphDirs():
     onlydirs = [f for f in listdir("./") if not isfile(join("./", f))]
     onlydirs = list(filter(lambda d: DIR_FMT.search(d) != None, onlydirs))
 
-    tupels = []
+    samples = []
 
     for d in onlydirs:
-        tupels.extend(doMorphDir(d))
+        samples.extend(doMorphDir(d))
 
-    print(tupels)
+    return samples
+
+def doOriginalImages():
+    if len(images) % 2 != 0:
+        return
+    
+    pairs = []
+    samples = []
+
+    for i in range(len(images) - 1):
+        pairs.append([images[i], images[i + 1]])
+
+    pairs.append([images[len(images) - 1], images[0]])
+
+    for p in pairs:
+        sample = genSample(IMAGES + "/" + p[0] + "_03.jpg", [p[1]])
+        sample.type = TYPE_ORIG
+
+        samples.append(sample)
+
+    return samples
+
+def autoTesting():
+    morphSamples = doMorphDirs()
+    origSamples = doOriginalImages()
+
+    morphFMR = findFMR(morphSamples)
+    origFMR = findFMR(origSamples)
+
+    print("Samples collected:")
+    print(" morph --", len(morphSamples), "FMR:", morphFMR)
+    print(" origs --", len(origSamples), "FMR:", origFMR)
+
+    print("")
+    print("Morphs:")
+    print(morphSamples)
+
+    print("")
+    print("Originals:")
+    print(origSamples)
 
 def main():
     try:
@@ -113,7 +234,7 @@ def main():
     if auto:
         print("Automatic testing enabled...")
 
-        doMorphDirs()
+        autoTesting()
     else:
         offset = (len(opts) * 2) + 1
         morph = sys.argv[offset]
