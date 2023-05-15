@@ -1,6 +1,10 @@
 #
 # Try out: python3 verify.py -t 0.3 100_101.png 100_03.jpg 101_03.jpg 102_03.jpg
 #
+# Automatic testing: (standard tolerance is 0.6)
+#  python3 verify.py -a
+#  python3 verify.py -a -t 0.4
+#
 
 import face_biometric_recognition as lib
 import sys, getopt
@@ -16,7 +20,7 @@ TYPE_MORPH = "morph"
 TYPE_ORIG = "orig"
 
 IMAGES = "images"
-DIR_FMT = re.compile("morphs-[a-z]+")
+DIR_FMT = re.compile("morphs-emil")
 MORPH_FMT = re.compile("([a-z]+)-(\d+)_(\d+)\.[a-z]{3}")
 
 class Sample:
@@ -54,9 +58,9 @@ def findFMR(results):
     matches = 0
 
     for s in results:
-        for i in s.matches:
-            matches = matches + len(s.matches)
+        matches = matches + len(s.matches)
 
+        for i in s.matches:
             if i == True:
                 fm = fm + 1
 
@@ -98,7 +102,7 @@ def genSample(imgFile, imgs, tolerance = 0.6):
     return sample
 
 # Filename format: {program}-{left}_{right}.jpg
-def genMorphSample(morphDir, morphFilename):
+def genMorphSample(morphDir, morphFilename, tolerance):
     match = MORPH_FMT.search(morphFilename)
 
     if match != None:
@@ -110,7 +114,7 @@ def genMorphSample(morphDir, morphFilename):
         images.append(left)
         images.append(right)
 
-        sample = genSample(morphFile, [left, right])
+        sample = genSample(morphFile, [left, right], tolerance)
         sample.type = TYPE_MORPH
         sample.program = program
 
@@ -146,29 +150,35 @@ def readImages():
     onlyfiles = [f for f in listdir(IMAGES) if isfile(join(IMAGES, f))]
     return onlyfiles
 
-def doMorphDir(dir):
+def doMorphDir(dir, tolerance):
     files = [f for f in listdir(dir) if isfile(join(dir, f))]
     samples = []
 
     for f in files:
-        samples.append(genMorphSample(dir, f))
+        samples.append(genMorphSample(dir, f, tolerance))
 
     return samples
 
-def doMorphDirs():
+def doMorphDirs(tolerance):
     onlydirs = [f for f in listdir("./") if not isfile(join("./", f))]
     onlydirs = list(filter(lambda d: DIR_FMT.search(d) != None, onlydirs))
+
+    print("")
+    print("Processing morph images:")
 
     samples = []
 
     for d in onlydirs:
-        samples.extend(doMorphDir(d))
+        samples.extend(doMorphDir(d, tolerance))
 
     return samples
 
-def doOriginalImages():
+def doOriginalImages(tolerance):
     if len(images) % 2 != 0:
         return
+
+    print("")
+    print("Processing original images:")
     
     pairs = []
     samples = []
@@ -179,20 +189,21 @@ def doOriginalImages():
     pairs.append([images[len(images) - 1], images[0]])
 
     for p in pairs:
-        sample = genSample(IMAGES + "/" + p[0] + "_03.jpg", [p[1]])
+        sample = genSample(IMAGES + "/" + p[0] + "_03.jpg", [p[1]], tolerance)
         sample.type = TYPE_ORIG
 
         samples.append(sample)
 
     return samples
 
-def autoTesting():
-    morphSamples = doMorphDirs()
-    origSamples = doOriginalImages()
+def autoTesting(tolerance):
+    morphSamples = doMorphDirs(tolerance)
+    origSamples = doOriginalImages(tolerance)
 
     morphFMR = findFMR(morphSamples)
     origFMR = findFMR(origSamples)
 
+    print("")
     print("Samples collected:")
     print(" morph --", len(morphSamples), "FMR:", morphFMR)
     print(" origs --", len(origSamples), "FMR:", origFMR)
@@ -234,7 +245,7 @@ def main():
     if auto:
         print("Automatic testing enabled...")
 
-        autoTesting()
+        autoTesting(tolerance)
     else:
         offset = (len(opts) * 2) + 1
         morph = sys.argv[offset]
