@@ -20,7 +20,7 @@ TYPE_MORPH = "morph"
 TYPE_ORIG = "orig"
 
 IMAGES = "images"
-DIR_FMT = re.compile("morphs-[a-z]+") # Run a single dir: morphs-name
+DIR_FMT = re.compile("morphs-emil") # re.compile("morphs-[a-z]+") # Run a single dir: morphs-name
 MORPH_FMT = re.compile("([a-z]+)-(\d+)_(\d+)\.[a-z]{3}")
 
 class Sample:
@@ -64,6 +64,9 @@ def findFMR(results):
             if i == True:
                 fm = fm + 1
 
+    if matches == 0:
+        return 0
+    
     return round(fm / matches, 3)
 
 # Execute
@@ -198,8 +201,18 @@ def doOriginalImages(tolerance):
 
 def autoTesting(tolerance):
     morphSamples = doMorphDirs(tolerance)
-    origSamples = doOriginalImages(tolerance)
+    origSamples = [] # doOriginalImages(tolerance)
 
+    # grouped by program
+    groupedMorphs = {}
+
+    for s in morphSamples:
+        if s.program not in groupedMorphs:
+            groupedMorphs[s.program] = []
+
+        groupedMorphs[s.program].append(s)
+
+    # error rates
     morphFMR = findFMR(morphSamples)
     origFMR = findFMR(origSamples)
 
@@ -210,7 +223,10 @@ def autoTesting(tolerance):
 
     print("")
     print("Morphs:")
-    print(morphSamples)
+
+    for gm in groupedMorphs.keys():
+        print(" ==", gm, "@ FMR:", findFMR(groupedMorphs[gm]))
+        print(groupedMorphs[gm])
 
     print("")
     print("Originals:")
