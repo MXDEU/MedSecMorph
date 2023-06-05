@@ -15,7 +15,7 @@ from os.path import isfile, join
 from random import randrange
 import random
 
-DRYRUN = True
+DRYRUN = False
 TYPE_MORPH = "morph"
 TYPE_ORIG = "orig"
 
