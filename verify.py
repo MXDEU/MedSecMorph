@@ -20,7 +20,9 @@ TYPE_MORPH = "morph"
 TYPE_ORIG = "orig"
 
 IMAGES = "images"
-DIR_FMT = re.compile("morphs-emil") # re.compile("morphs-[a-z]+") # Run a single dir: morphs-name
+# DIR_FMT = re.compile("morphs-emil") # 
+DIR_FMT = re.compile("morphs-[a-z]+") # Run a single dir: morphs-name
+IMG_FMT = re.compile(IMAGES + "/0*(\d+)_03.jpg")
 MORPH_FMT = re.compile("([a-z]+)-(\d+)_(\d+)\.[a-z]{3}")
 
 class Sample:
@@ -32,11 +34,18 @@ class Sample:
         self.matches = matches
         self.tolerance = tolerance
 
+        imgId = IMG_FMT.search(img)
+
+        if imgId is not None:
+            self.imgId = imgId.group(1)
+        else:
+            self.imgId = -1
+
     def __str__(self):
         if self.type == TYPE_MORPH:
             return f"[{self.type}, {self.program}, {self.img}, {self.imgs}, {self.matches}, {self.tolerance}]"
         elif self.type == TYPE_ORIG:
-            return f"[{self.type}, {self.img}, {self.imgs}, {self.matches}, {self.tolerance}]"
+            return f"[{self.type}, {self.img}, {self.imgId}, {self.imgs}, {self.matches}, {self.tolerance}]"
 
         return f"[{self.type}]"
 
@@ -60,8 +69,10 @@ def findFMR(results):
     for s in results:
         matches = matches + len(s.matches)
 
-        for i in s.matches:
-            if i == True:
+        for i, m in enumerate(s.matches):
+            falseMatch = (m == True and not s.imgId == s.imgs[i]) or (m == False and s.imgId == s.imgs[i])
+
+            if falseMatch:
                 fm = fm + 1
 
     if matches == 0:
@@ -73,7 +84,7 @@ def findFMR(results):
 
 def compare(morph_img, real_imgs, tolerance = 0.5):
     if DRYRUN:
-        return [random.choice([True, False]), random.choice([True, False])]
+        return [random.choice([True, False]) for ri in real_imgs]
 
     morph = lib.load_image_file(morph_img)
     morph_enc = lib.face_encodings(morph)[0]
@@ -201,7 +212,7 @@ def doOriginalImages(tolerance):
 
 def autoTesting(tolerance):
     morphSamples = doMorphDirs(tolerance)
-    origSamples = [] # doOriginalImages(tolerance)
+    origSamples = doOriginalImages(tolerance)
 
     # grouped by program
     groupedMorphs = {}
