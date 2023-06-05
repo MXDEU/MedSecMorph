@@ -15,7 +15,7 @@ from os.path import isfile, join
 from random import randrange
 import random
 
-DRYRUN = False
+DRYRUN = True
 TYPE_MORPH = "morph"
 TYPE_ORIG = "orig"
 
@@ -76,9 +76,9 @@ def findFMR(results):
                 fm = fm + 1
 
     if matches == 0:
-        return 0
+        return [0, 0]
     
-    return round(fm / matches, 3)
+    return [fm, round(fm / matches, 3)]
 
 # Execute
 
@@ -229,14 +229,16 @@ def autoTesting(tolerance):
 
     print("")
     print("Samples collected:")
-    print(" morph --", len(morphSamples), "FMR:", morphFMR)
-    print(" origs --", len(origSamples), "FMR:", origFMR)
+    print(" morph --", len(morphSamples), " FMR:", morphFMR[1], " False matches:", morphFMR[0], "of", len(morphSamples) * 2, "comparisons")
+    print(" origs --", len(origSamples), " FMR:", origFMR[1], " False matches:", origFMR[0])
 
     print("")
     print("Morphs:")
 
     for gm in groupedMorphs.keys():
-        print(" ==", gm, "@ FMR:", findFMR(groupedMorphs[gm]))
+        fmr = findFMR(groupedMorphs[gm])
+
+        print(" ==", gm, "@ Samples:", len(groupedMorphs[gm]), " FMR:", fmr[1], " False matches:", fmr[0])
         print(groupedMorphs[gm])
 
     print("")
