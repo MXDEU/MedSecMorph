@@ -23,6 +23,7 @@ IMAGES = "images"
 # DIR_FMT = re.compile("morphs-emil") # 
 DIR_FMT = re.compile("morphs-[a-z]+") # Run a single dir: morphs-name
 IMG_FMT = re.compile(IMAGES + "/0*(\d+)_03.jpg")
+FOLDER_NAME_FMT = re.compile("morphs-(.*)/.*")
 MORPH_FMT = re.compile("([a-z]+)-(\d+)_(\d+)\.[a-z]{3}")
 
 class Sample:
@@ -35,15 +36,21 @@ class Sample:
         self.tolerance = tolerance
 
         imgId = IMG_FMT.search(img)
+        imgFolder = FOLDER_NAME_FMT.search(img)
 
         if imgId is not None:
             self.imgId = imgId.group(1)
         else:
             self.imgId = -1
 
+        if imgFolder is not None:
+            self.imgFolder = imgFolder.group(1)
+        else:
+            self.imgFolder = '<none>'
+
     def __str__(self):
         if self.type == TYPE_MORPH:
-            return f"[{self.type}, {self.program}, {self.img}, {self.imgs}, {self.matches}, {self.tolerance}]"
+            return f"[{self.type}, {self.program}, {self.imgFolder}, {self.img}, {self.imgs}, {self.matches}, {self.tolerance}]"
         elif self.type == TYPE_ORIG:
             return f"[{self.type}, {self.img}, {self.imgId}, {self.imgs}, {self.matches}, {self.tolerance}]"
 
@@ -210,6 +217,17 @@ def doOriginalImages(tolerance):
 
     return samples
 
+def groupSamples(samples, attribute):
+    grouped = {}
+
+    for s in samples:
+        if getattr(s, attribute) not in grouped:
+            grouped[getattr(s, attribute)] = []
+
+        grouped[getattr(s, attribute)].append(s)
+
+    return grouped
+
 def autoTesting(tolerance):
     morphSamples = doMorphDirs(tolerance)
     origSamples = doOriginalImages(tolerance)
@@ -240,6 +258,16 @@ def autoTesting(tolerance):
 
         print(" ==", gm, "@ Samples:", len(groupedMorphs[gm]), " FMR:", fmr[1], " False matches:", fmr[0])
         print(groupedMorphs[gm])
+
+    print("")
+    print("FMR by creator:")
+
+    groupedMorphs = groupSamples(morphSamples, 'imgFolder')
+
+    for gm in groupedMorphs.keys():
+        fmr = findFMR(groupedMorphs[gm])
+
+        print(" *", gm, "\t@ Samples:", len(groupedMorphs[gm]), " FMR:", fmr[1], " False matches:", fmr[0], "of", len(groupedMorphs[gm]) * 2, "comparisons")
 
     print("")
     print("Originals:")
