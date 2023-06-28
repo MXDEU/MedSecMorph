@@ -63,11 +63,6 @@ images = []
 
 # Eval
 
-# Returns an array of all failed result tupels.
-# A tupel is failed if any of the matches returned true.
-def findErrors(results):
-    return
-
 # Returns FMR
 def findFMR(results):
     fm = 0 # false matches
@@ -107,7 +102,6 @@ def compare(morph_img, real_imgs, tolerance = 0.5):
 
     results = lib.compare_faces(reals, morph_enc, tolerance)
 
-    # Prints [True, False] since 100 is recognized, 101 is not
     print("Results: ", morph_img, "\tTolerance:", tolerance)
 
     for i, ri in enumerate(real_imgs):
@@ -142,30 +136,6 @@ def genMorphSample(morphDir, morphFilename, tolerance):
         return sample
 
     return None
-
-def getImageTupel(morphDir, morphFilename):
-    match = MORPH_FMT.search(morphFilename)
-
-    if match != None:
-        program = match.group(1)
-        left = match.group(2)
-        right = match.group(3)
-
-        # TODO: randomize
-        tolerance = 0.6
-
-        morphFile = morphDir + "/" + morphFilename
-        leftFile = IMAGES + "/" + left + "_03.jpg"
-        rightFile = IMAGES + "/" + right + "_03.jpg"
-
-        comp = compare(morphFile, [leftFile, rightFile], tolerance)
-        images.append(left)
-        images.append(right)
-
-        # program, original left, original right, tolerance used, match (left, right)
-        return [program, left, right, tolerance, comp]
-    
-    return []
 
 def readImages():
     onlyfiles = [f for f in listdir(IMAGES) if isfile(join(IMAGES, f))]
